@@ -13,7 +13,7 @@ import androidx.core.view.WindowInsetsCompat
  * the navigation bar and the keyboard, and android:statusBarColor is ignored.
  *
  * Call after super.onCreate(), before setContentView(). Bars are transparent with light icons, so the root view's
- * background (colorPrimaryVariant, as the old status bar colour) shows through them.
+ * background (colorPrimaryDark, as the old status bar colour) shows through them.
  */
 fun ComponentActivity.drawBehindSystemBars() {
     enableEdgeToEdge(

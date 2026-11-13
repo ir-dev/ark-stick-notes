@@ -19,8 +19,8 @@ android {
         applicationId "ark.immanuel.stickynotes"
         minSdk 21
         targetSdk 36
-        versionCode 4
-        versionName "1.4"
+        versionCode 5
+        versionName "1.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -63,10 +63,12 @@ kotlin {
 dependencies {
 
     // Newer AndroidX releases require minSdk 23; these are the last that still support minSdk 21.
+    // No Material Components: the app only needed its theme, and its BottomSheetDialog, SheetDialog
+    // and EdgeToEdgeUtils call Window.setStatusBarColor/setNavigationBarColor (deprecated in
+    // Android 15), which Play reports as "deprecated APIs for edge-to-edge". The theme is AppCompat.
     implementation 'androidx.core:core-ktx:1.16.0'
     implementation 'androidx.activity:activity-ktx:1.10.1'
     implementation 'androidx.appcompat:appcompat:1.7.1'
-    implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     testImplementation 'junit:junit:4.13.2'
