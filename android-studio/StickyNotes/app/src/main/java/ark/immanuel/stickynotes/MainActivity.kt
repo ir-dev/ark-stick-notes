@@ -16,12 +16,10 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.*
 import android.util.Log
-import android.view.View
 import android.webkit.*
 import android.webkit.WebView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
@@ -33,53 +31,50 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 
 class MainActivity : AppCompatActivity() {
-    private val webView: WebView? = null
+    private lateinit var webView: WebView
     lateinit var swipeRefreshLayout: SwipeRefreshLayout
-private val activity: MainActivity = this
-    private val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                Log.i("Permission: ", "Granted")
-                Toast.makeText(this, "Storage Permission Granted....", Toast.LENGTH_SHORT).show()
-            } else {
-                Log.i("Permission: ", "Denied")
-                Toast.makeText(this, "Storage Permission Denied....", Toast.LENGTH_SHORT).show()
-            }
-        }
-    fun requestPermission(view: View, perm: Manifest.permission) {
-        when {
-            ContextCompat.checkSelfPermission(
-                this,
-                perm.toString()
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                Toast.makeText(this, "Storage Permission Granted....", Toast.LENGTH_SHORT).show()
-            }
 
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                this,
-                perm.toString()
-            ) -> {
-                Toast.makeText(this, "Storage Permission Required....", Toast.LENGTH_SHORT).show()
-                    requestPermissionLauncher.launch(
-                        perm.toString()
-                    )
-            }
-            else -> {
-                requestPermissionLauncher.launch(
-                    perm.toString()
-                )
-            }
+    // Back steps through the WebView's history. onBackPressed() is no longer called for apps
+    // targeting API 36 (predictive back), so this goes through the OnBackPressedDispatcher. It is
+    // enabled only while there is a page to go back to; otherwise Back leaves the app as usual.
+    private val webViewBack = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            webView.goBack()
         }
     }
+
+    // The page records audio with getUserMedia(). WebView turns that into onPermissionRequest(),
+    // and the page's promise stays pending until the request is granted or denied. When the app
+    // does not hold RECORD_AUDIO yet, the request waits here while Android asks the user.
+    private var pendingMicRequest: PermissionRequest? = null
+
+    private val micPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val request = pendingMicRequest ?: return@registerForActivityResult
+            pendingMicRequest = null
+            if (granted) {
+                request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+            } else {
+                request.deny()
+                // After a denial or two Android stops showing its dialog, so point at Settings.
+                // Keep it short: Android 12+ cuts toasts off after two lines.
+                Toast.makeText(
+                    this,
+                    "Microphone blocked. Allow it in Settings > Apps > Sticky Notes",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        drawBehindSystemBars()
         setContentView(R.layout.activity_main)
+        padForSystemBars(findViewById(R.id.root))
+        onBackPressedDispatcher.addCallback(this, webViewBack)
         val progressDialog: ProgressDialog = ProgressDialog(this)
-        val webView = findViewById<WebView>(R.id.webView)
+        webView = findViewById(R.id.webView)
         swipeRefreshLayout = findViewById(R.id.swiperefresh);
 
         swipeRefreshLayout.setOnRefreshListener {
@@ -175,6 +170,10 @@ private val activity: MainActivity = this
                 progressDialog.hide()
             }
 
+            override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                webViewBack.isEnabled = webView.canGoBack()
+            }
+
             override fun onReceivedError(
                 view: WebView?,
                 request: WebResourceRequest?,
@@ -186,19 +185,30 @@ private val activity: MainActivity = this
             }
         }
         webView.webChromeClient = object : WebChromeClient() {
-            @RequiresApi(Build.VERSION_CODES.M)
             override fun onPermissionRequest(request: PermissionRequest) {
-                Log.i("Permissions", "onPermissionRequest")
+                Log.i("Permissions", "onPermissionRequest ${request.origin} ${request.resources.joinToString()}")
 
-                // grants permission for app. video not showing
-                if (ContextCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED
+                // Only the mic, and only for the Sticky Notes site: other pages opened in this
+                // WebView (links in notes load here too) get nothing.
+                if (request.origin.host != APP_HOST ||
+                    PermissionRequest.RESOURCE_AUDIO_CAPTURE !in request.resources
                 ) {
-                    Log.i("Permissions", "Request Permission")
-                    requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.MODIFY_AUDIO_SETTINGS, Manifest.permission.CAPTURE_AUDIO_OUTPUT, Manifest.permission.RECORD_AUDIO), 1010)
-                } else {
-                    Log.i("Permissions", "Permission already granted")
+                    request.deny()
+                    return
                 }
+                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO)
+                    == PackageManager.PERMISSION_GRANTED
+                ) {
+                    request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+                } else {
+                    pendingMicRequest?.deny()
+                    pendingMicRequest = request
+                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            }
+
+            override fun onPermissionRequestCanceled(request: PermissionRequest) {
+                if (pendingMicRequest == request) pendingMicRequest = null
             }
         }
         // this will enable the javascript settings, it can also allow xss vulnerabilities
@@ -227,21 +237,8 @@ private val activity: MainActivity = this
 
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        when (requestCode) {
-            1010 -> {
-                Log.d("MainActivity", "onRequestPermissionsResult: Camera Request")
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    Log.d("MainActivity", "Camera Request: Permission granted")
-                    // permission was granted, yay!
-                } else {
-                    // permission denied, boo!
-                    Log.d("MainActivity", "Camera Request: Permission denied")
-                }
-                return
-            }
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    companion object {
+        private const val APP_HOST = "sticky-notes.immanuel.co"
     }
 
     class MyJavascriptInterface(private val context: Context) {
@@ -250,15 +247,6 @@ private val activity: MainActivity = this
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
-    // if you press Back button this code will work
-    override fun onBackPressed() {
-        // if your webview can go back it will go back
-        when {
-            webView?.canGoBack() == true -> webView.goBack()
-            else -> super.onBackPressed()
-        }
-    }
-
     @SuppressLint("ServiceCast")
     private fun checkForInternet(context: Context): Boolean {
 

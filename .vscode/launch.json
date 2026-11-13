@@ -1,0 +1,24 @@
+{
+    // Needs the "Android" debugger extension (adelphes.android-dev-ext).
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Android: launch Sticky Notes",
+            "type": "android",
+            "request": "launch",
+            "preLaunchTask": "Android: build debug APK",
+            "appSrcRoot": "${workspaceFolder}/android-studio/StickyNotes/app/src/main",
+            "apkFile": "${workspaceFolder}/android-studio/StickyNotes/app/build/outputs/apk/debug/app-debug.apk",
+            "launchActivity": ".SplashActivity",
+            "targetDevice": "${command:PickAndroidDevice}"
+        },
+        {
+            "name": "Android: attach to running app",
+            "type": "android",
+            "request": "attach",
+            "appSrcRoot": "${workspaceFolder}/android-studio/StickyNotes/app/src/main",
+            "processId": "${command:PickAndroidProcess}",
+            "targetDevice": "${command:PickAndroidDevice}"
+        }
+    ]
+}

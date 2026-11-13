@@ -16,7 +16,9 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        drawBehindSystemBars()
         setContentView(R.layout.activity_splash)
+        padForSystemBars(findViewById(R.id.root))
         val myWebView: WebView = findViewById(R.id.webViewSplash)
         val webSetting: WebSettings = myWebView.getSettings()
         //webSetting.builtInZoomControls = true

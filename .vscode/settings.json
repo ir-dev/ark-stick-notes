@@ -1,0 +1,17 @@
+{
+    // The Gradle project lives in a subfolder, not at the workspace root.
+    "gradle.nestedProjects": ["android-studio/StickyNotes"],
+
+    "files.exclude": {
+        "**/.gradle": true,
+        "android-studio/StickyNotes/build": true,
+        "android-studio/StickyNotes/app/build": true
+    },
+    "files.watcherExclude": {
+        "**/.gradle/**": true,
+        "**/build/**": true
+    },
+    "search.exclude": {
+        "**/build": true
+    }
+}

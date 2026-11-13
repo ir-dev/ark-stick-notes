@@ -1,0 +1,71 @@
+{
+    // Android tasks for the Sticky Notes app (android-studio/StickyNotes).
+    // Run with Cmd+Shift+B (default build) or Terminal > Run Task...
+    "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}/android-studio/StickyNotes",
+        "env": {
+            // JDK 21 bundled with Android Studio; Gradle 8.14 + AGP 8.13 run on it.
+            "JAVA_HOME": "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
+            "ANDROID_HOME": "${env:HOME}/Library/Android/sdk"
+        }
+    },
+    "tasks": [
+        {
+            "label": "Android: build debug APK",
+            "type": "shell",
+            "command": "./gradlew assembleDebug",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: install & run on device",
+            "detail": "Installs the debug build on the connected device/emulator and opens the app",
+            "type": "shell",
+            "command": "./gradlew installDebug && \"$ANDROID_HOME/platform-tools/adb\" shell am start -n ark.immanuel.stickynotes/.SplashActivity",
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: start emulator",
+            "detail": "Boots the Medium_Phone_API_36.1 (Android 16) virtual device",
+            "type": "shell",
+            "command": "\"$ANDROID_HOME/emulator/emulator\" -avd Medium_Phone_API_36.1",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: logcat (app only)",
+            "type": "shell",
+            "command": "ADB=\"$ANDROID_HOME/platform-tools/adb\"; \"$ADB\" logcat -v color --pid=$(\"$ADB\" shell pidof -s ark.immanuel.stickynotes)",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: unit tests",
+            "type": "shell",
+            "command": "./gradlew testDebugUnitTest",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: lint",
+            "detail": "Report: android-studio/StickyNotes/app/build/reports/lint-results-debug.html",
+            "type": "shell",
+            "command": "./gradlew lintDebug",
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: release bundle for Play (.aab)",
+            "detail": "Signed only if keystore.properties exists; output in app/build/outputs/bundle/release",
+            "type": "shell",
+            "command": "./gradlew bundleRelease",
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: clean",
+            "type": "shell",
+            "command": "./gradlew clean",
+            "problemMatcher": []
+        }
+    ]
+}

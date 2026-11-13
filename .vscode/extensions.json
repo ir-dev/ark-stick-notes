@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+        "JetBrains.kotlin-server",
+        "vscjava.vscode-gradle",
+        "adelphes.android-dev-ext",
+        "redhat.vscode-xml"
+    ],
+    "unwantedRecommendations": [
+        // Superseded by JetBrains' official Kotlin extension above.
+        "fwcd.kotlin"
+    ]
+}
