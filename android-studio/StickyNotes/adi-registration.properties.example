@@ -1,0 +1,10 @@
+# Android developer verification: proves this Play account owns the package ark.immanuel.stickynotes.
+#
+# 1. Copy the snippet from the Android Developer Console (Register package -> "How to sign an APK").
+#    It is unique to the developer account.
+# 2. Save it as app/src/main/assets/adi-registration.properties (exact name; gitignored).
+#    That file must hold ONLY the snippet on one line: drop these comment lines.
+# 3. Build a release APK and sign it with the key whose SHA-256 you gave the console (see README.md).
+#
+# Keep this example out of app/src/main/assets: everything in that folder is packaged into the app.
+YOUR_SNIPPET_FROM_THE_CONSOLE

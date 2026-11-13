@@ -1,4 +1,28 @@
 ﻿
+> apksigner 
+
+cd ~/Immi/git_src/ark-stick-notes/android-studio/StickyNotes
+JBR="/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin"
+
+# 1. If you don't remember the alias, list it (asks for the keystore password)
+"$JBR/keytool" -list -keystore /path/to/sticky_notes.jks
+
+
+"$JBR/keytool" -list \
+  -keystore /Users/Immanuel.Raj/Library/CloudStorage/OneDrive-NTTDATABusinessSolutionsAG/bkup_12_jun_26/Personal/android_playstore_cert/sticky_notes.jks \
+  | grep PrivateKeyEntry
+
+
+# 2. Sign the bundle
+"$JBR/jarsigner" -sigalg SHA256withRSA -digestalg SHA-256 \
+  -keystore /path/to/sticky_notes.jks \
+  app/build/outputs/bundle/release/app-release.aab key
+
+# 3. Check it: should print "jar verified."
+"$JBR/jarsigner" -verify app/build/outputs/bundle/release/app-release.aab
+
+
+----------------
 MVC: 
 	Record folder contains sticky-notes.immanuel.co
 
